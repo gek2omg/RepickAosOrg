@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "851593018086",
+    "project_id": "repick-d3258",
+    "storage_bucket": "repick-d3258.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:851593018086:android:c20c0c0201d82a0e7f9927",
+        "android_client_info": {
+          "package_name": "com.trendpicker.repick"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "851593018086-9j7v4ntqlt83pdkq28ob1fuqgslj542k.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCBIOA7spK_ydovhR1p0kXrnFUvjuNZagM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "851593018086-9j7v4ntqlt83pdkq28ob1fuqgslj542k.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "851593018086-anutkgpqd6h8nfm6brppu57e6i7cp370.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.eksehrdnpq.repick"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
