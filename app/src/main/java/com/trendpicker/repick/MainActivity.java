@@ -1,14 +1,18 @@
 package com.trendpicker.repick;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
-import androidx.annotation.StringDef;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.ContextCompat;
-import androidx.core.content.FileProvider;
+import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
+import static android.content.ContentValues.TAG;
+import static android.content.pm.PackageManager.PERMISSION_DENIED;
+import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+import static com.gun0912.tedpermission.provider.TedPermissionProvider.context;
+import static com.trendpicker.repick.Props.AlertCustom;
+import static com.trendpicker.repick.Props.MainBackDoublePressOut;
+import static com.trendpicker.repick.Props.MainBackDoublePressOut_GuideString;
+import static com.trendpicker.repick.Props.USER_AGENT;
+import static com.trendpicker.repick.Props.app_proj_name;
+import static com.trendpicker.repick.Props.base_url;
+import static com.trendpicker.repick.Props.fcm_data_click_action;
+import static com.trendpicker.repick.Props.fcm_permission_success;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -23,8 +27,8 @@ import android.content.ActivityNotFoundException;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
@@ -61,6 +65,15 @@ import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
+
 import com.buzzvil.buzzad.benefit.BuzzAdBenefit;
 import com.buzzvil.buzzad.benefit.BuzzAdBenefitConfig;
 import com.buzzvil.buzzad.benefit.core.ad.AdError;
@@ -76,30 +89,14 @@ import com.google.firebase.messaging.FirebaseMessaging;
 import com.gun0912.tedpermission.PermissionListener;
 import com.gun0912.tedpermission.normal.TedPermission;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
-import static android.content.ContentValues.TAG;
-import static android.content.pm.PackageManager.PERMISSION_DENIED;
-import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
-import static com.gun0912.tedpermission.provider.TedPermissionProvider.context;
-import static com.trendpicker.repick.Props.AlertCustom;
-import static com.trendpicker.repick.Props.MainBackDoublePressOut;
-import static com.trendpicker.repick.Props.MainBackDoublePressOut_GuideString;
-import static com.trendpicker.repick.Props.USER_AGENT;
-import static com.trendpicker.repick.Props.app_proj_name;
-import static com.trendpicker.repick.Props.base_url;
-import static com.trendpicker.repick.Props.fcm_data_click_action;
-import static com.trendpicker.repick.Props.fcm_permission_success;
 
 public class MainActivity extends AppCompatActivity {
     BackPressCloseHandler backPressCloseHandler;
@@ -107,6 +104,7 @@ public class MainActivity extends AppCompatActivity {
     public ValueCallback<Uri[]> filePathCallbackLollipop;
     public final static int FILECHOOSER_NORMAL_REQ_CODE = 2001;
     public final static int FILECHOOSER_LOLLIPOP_REQ_CODE = 2002;
+
 
     private boolean isNews = false;
     String[] exceptUrl = new String[]{
@@ -170,11 +168,26 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private String getPlayStoreAppVersion(Context context) {
+        PackageManager packageManager = context.getPackageManager();
+        String playStorePackageName = "com.trendpicker.repick"; // Play Store 패키지 이름
+        try {
+            PackageInfo packageInfo = packageManager.getPackageInfo(playStorePackageName, 0);
+            return packageInfo.versionName;
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+
     BuzzAdInterstitial buzzAdInterstitial = null;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+
+        String appVersion = getPlayStoreAppVersion(context).trim();
 
         // FeedConfig 설정
         final FeedConfig feedConfig = new FeedConfig.Builder("485364925359311")
@@ -315,7 +328,7 @@ public class MainActivity extends AppCompatActivity {
             String userAgent = webView.getSettings().getUserAgentString();
             webView.getSettings().setUserAgentString(userAgent + USER_AGENT + " ");
         }
-        webView.loadUrl(baseUrl);
+        webView.loadUrl(baseUrl+appVersion);
 
         if (getIntent().hasExtra(fcm_data_click_action)){
             String action = getIntent().getStringExtra(fcm_data_click_action);

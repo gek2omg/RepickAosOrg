@@ -59,4 +59,10 @@ dependencies {
     // TedPermission
     implementation 'io.github.ParkSangGwon:tedpermission-normal:3.3.0'
     implementation "com.buzzvil:buzzad-benefit:3.35.+"// BuzzAd SDK 라이브러리
+
+
+    //implementation 'com.google.android.gms:play-services:version_number'  //앱 버전 체크
+    implementation 'com.google.android.play:app-update:2.1.0'
+
+    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
 }
