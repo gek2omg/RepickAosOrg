@@ -27,6 +27,8 @@ public class SplashActivity extends AppCompatActivity {
 
     private OpenApi OpenApi = com.trendpicker.repick.OpenApi.getInstance();
 
+    //private  AlertDialog dialog = null;
+
     private String getPlayStoreAppVersion(Context context) {
         PackageManager packageManager = context.getPackageManager();
         String playStorePackageName = "com.trendpicker.repick"; // Play Store 패키지 이름
@@ -39,7 +41,9 @@ public class SplashActivity extends AppCompatActivity {
         }
     }
 
+    private void isShow(){
 
+    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -63,15 +67,7 @@ public class SplashActivity extends AppCompatActivity {
                         //finish();
                     }
                 });
-
         AlertDialog dialog = builder.create();
-        dialog.show();
-//        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-//
-//        builder.setTitle("인사말").setMessage("반갑습니다");
-//
-//        AlertDialog alertDialog = builder.create();
-//        alertDialog.show();
 
         Callback callback = new Callback() {
             @Override
@@ -83,9 +79,12 @@ public class SplashActivity extends AppCompatActivity {
                 String body = response.body().string();
                 //System.out.println("body.."+body);
                 if(body.equals("false")){
-                    //System.out.println("bodyㄴㅇㄹㄴㅇㄹㄴㅇㄹㄴㅇㄹㄴㅇㄹㄴㅇㄹㄴㅇㄹㄴㅇㄹ");
-
-
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            dialog.show();
+                        }
+                    });
                 }else{
                     //Toast.makeText(getApplicationContext(), "버전확인 중입니다.", Toast.LENGTH_LONG).show();
                     Intent inte = new Intent(SplashActivity.this , MainActivity.class);
@@ -100,11 +99,6 @@ public class SplashActivity extends AppCompatActivity {
 
 
         new Handler().postDelayed(() -> {
-//            Intent inte = new Intent(SplashActivity.this , IntroActivity.class);
-//            if (getIntent().getExtras() != null) {
-//                inte.putExtras(getIntent().getExtras());
-//            }
-//            startActivity(inte);
             OpenApi.requestWebServer(AppVersion, callback);
             //finish();
 
