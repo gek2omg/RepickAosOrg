@@ -81,9 +81,9 @@ public class SplashActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 String body = response.body().string();
-                System.out.println("body.."+body);
+                //System.out.println("body.."+body);
                 if(body.equals("false")){
-                    System.out.println("bodyㄴㅇㄹㄴㅇㄹㄴㅇㄹㄴㅇㄹㄴㅇㄹㄴㅇㄹㄴㅇㄹㄴㅇㄹ");
+                    //System.out.println("bodyㄴㅇㄹㄴㅇㄹㄴㅇㄹㄴㅇㄹㄴㅇㄹㄴㅇㄹㄴㅇㄹㄴㅇㄹ");
 
 
                 }else{

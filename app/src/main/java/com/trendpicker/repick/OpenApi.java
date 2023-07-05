@@ -28,7 +28,7 @@ public class OpenApi {
     public void requestWebServer(String appVersion,  Callback callback) {
 
         String url = "https://trendpicker1.cafe24.com/proc/version-check.php?version="+appVersion;
-        System.out.println(url);
+        //System.out.println(url);
         Request request = new Request.Builder()
                 // .addHeader("key", "Content-Type")
                 // .addHeader("value", "application/json")
