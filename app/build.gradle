@@ -23,7 +23,7 @@ android {
         applicationId "com.trendpicker.repick"
         minSdkVersion 23
         targetSdkVersion 33
-        versionCode 7
+        versionCode 8
         versionName "1.1"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"

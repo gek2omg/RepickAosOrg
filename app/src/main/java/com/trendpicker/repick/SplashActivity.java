@@ -61,12 +61,11 @@ public class SplashActivity extends AppCompatActivity {
                 .setPositiveButton("업데이트 하러가기", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        // 확인 버튼을 눌렀을 때의 동작
-                        //startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.naver.com")));
                         startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=com.trendpicker.repick")));
-                        //finish();
+                        finish();
+
                     }
-                });
+                }).setCancelable(false);
         AlertDialog dialog = builder.create();
 
         Callback callback = new Callback() {
