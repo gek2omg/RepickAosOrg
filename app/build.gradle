@@ -16,13 +16,13 @@ android {
             keyAlias 'key'
         }
     }
-    compileSdkVersion 33
+    compileSdkVersion 32
     buildToolsVersion "30.0.3"
 
     defaultConfig {
         applicationId "com.trendpicker.repick"
         minSdkVersion 23
-        targetSdkVersion 33
+        targetSdkVersion 32
         versionCode 8
         versionName "1.1"
 
