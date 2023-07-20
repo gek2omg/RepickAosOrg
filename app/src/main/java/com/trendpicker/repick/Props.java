@@ -2,7 +2,7 @@ package com.trendpicker.repick;
 
 public class Props {
 
-    public static final String base_url = "https://trendpicker1.cafe24.com/main/main.php?appVersion=";
+    public static final String base_url = "https://trendpicker1.cafe24.com/main/main.php";
 
     public static final String bridge_name = "eksehrdnpq";
 

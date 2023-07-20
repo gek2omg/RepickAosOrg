@@ -85,6 +85,7 @@ import com.buzzvil.buzzad.benefit.presentation.interstitial.InterstitialAdListen
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.gun0912.tedpermission.PermissionListener;
 import com.gun0912.tedpermission.normal.TedPermission;
@@ -105,7 +106,7 @@ public class MainActivity extends AppCompatActivity {
     public final static int FILECHOOSER_NORMAL_REQ_CODE = 2001;
     public final static int FILECHOOSER_LOLLIPOP_REQ_CODE = 2002;
 
-
+    BottomSheetDialog bottomSheetDialog;
     private boolean isNews = false;
     String[] exceptUrl = new String[]{
             "https://trendpicker1.cafe24.com/numpick/cash.php",
@@ -123,6 +124,7 @@ public class MainActivity extends AppCompatActivity {
             "https://trendpicker1.cafe24.com/numpick/ad.php",
             "https://trendpicker1.cafe24.com/numpick/scan.php",
             "https://trendpicker1.cafe24.com/mypage/mypage.php",
+           // "https://trendpicker1.cafe24.com/mypage/backpopup.php",
             "https://trendpicker1.cafe24.com/mypage/order-list.php",
             "https://trendpicker1.cafe24.com/numpick/scan-ok.php"};
 
@@ -187,7 +189,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
 
-        String appVersion = getPlayStoreAppVersion(context).trim();
+        String appVersion = "?appVersion="+ getPlayStoreAppVersion(context).trim();
 
         // FeedConfig 설정
         final FeedConfig feedConfig = new FeedConfig.Builder("485364925359311")
@@ -236,7 +238,6 @@ public class MainActivity extends AppCompatActivity {
             webView.getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
         }
         webView.addJavascriptInterface(javascriptInterface, BuzzAdBenefitJavascriptInterface.INTERFACE_NAME);
-
         webView.setOverScrollMode(View.OVER_SCROLL_NEVER);
 
         mapp = (MAPP) getApplication();
@@ -506,19 +507,97 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
         }
-        if (webView.canGoBack() && !webView.getUrl().equals(base_url)) {
+        if (webView.canGoBack() && !webView.getUrl().contains(base_url)) {
 //        if (webView.canGoBack()) {
             webView.goBack();
         } else {
             Log.d("URL ", webView.getUrl());
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setMessage("앱을 종료하시겠습니까?")
-                    .setNegativeButton("취소", (dialog, which) -> dialog.dismiss())
-                    .setPositiveButton("종료", (dialog, which) -> finish()).setCancelable(true).create().show();
+//            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+//            builder.setMessage("앱을 종료하시겠습니까?")
+//                    .setNegativeButton("취소", (dialog, which) -> dialog.dismiss())
+//                    .setPositiveButton("종료", (dialog, which) -> finish()).setCancelable(true).create().show();
+
+//            Intent intent = new Intent(this, BackPopupActivity.class);
+//            intent.putExtra("data", "Test Popup");
+//            startActivityForResult(intent, 1);
+           // setContentView(R.layout.activity_backpopup);
+            final View view = getLayoutInflater().inflate(R.layout.activity_backpopup, null);
+
+            bottomSheetDialog = new BottomSheetDialog(this);
+           // bottomSheetDialog = new BottomSheetDialog(this);
+            bottomSheetDialog.setContentView(view);
+            // WebView 생성채
+            WebView webView = new WebView(this);
+            final BuzzAdBenefitJavascriptInterface javascriptInterface = new BuzzAdBenefitJavascriptInterface(webView);
+            webView.getSettings().setJavaScriptEnabled(true); // JS를 사용하여 광고를 로드하기 때문에 필수임
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                // 롤리팝부터 Mixed Content 에러 막기 위함
+                webView.getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+            }
+            webView.addJavascriptInterface(javascriptInterface, BuzzAdBenefitJavascriptInterface.INTERFACE_NAME);
+            // WebView 객체가 null이 아닌 경우에만 작업 수행
+
+            webView.addJavascriptInterface(new Bridge(), Props.bridge_name);
+
+            webView.getSettings().setDomStorageEnabled(true);
+            webView.getSettings().setJavaScriptCanOpenWindowsAutomatically(true);
+            webView.getSettings().setAllowFileAccess(true);
+            webView.getSettings().setAllowFileAccessFromFileURLs(true);
+            webView.getSettings().setAllowUniversalAccessFromFileURLs(true);
+//        webView.getSettings().setBuiltInZoomControls(true);
+            webView.getSettings().setSupportZoom(true);
+            webView.getSettings().setDisplayZoomControls(false);
+            webView.getSettings().setTextZoom(100);
+            webView.setWebContentsDebuggingEnabled(true);
+            webView.setOverScrollMode(View.OVER_SCROLL_NEVER);
+            webView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
+            webView.getSettings().setAllowContentAccess(true);
+            webView.getSettings().setMediaPlaybackRequiresUserGesture(false);
+            webView.clearCache(true);
+            webView.clearHistory();
+
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+                webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+            }
+
+
+            // WebView 설정
+            webView.setWebViewClient(new WebViewClient());
+            webView.getSettings().setJavaScriptEnabled(true);
+            webView.loadUrl("https://trendpicker1.cafe24.com/mypage/backpopup.php"); // 원하는 URL로 변경
+           // bottomSheetDialog.setCancelable(false);   다른곳눌렀을때 취소
+            bottomSheetDialog.setContentView(webView);
+
+            ViewGroup.LayoutParams layoutParams = webView.getLayoutParams();
+            int screenHeight = getResources().getDisplayMetrics().heightPixels;
+            layoutParams.height = (int) (screenHeight * 0.60); // 화면 높이의 60%
+            webView.setLayoutParams(layoutParams);
+
+            bottomSheetDialog.show();
+
+            //bottomSheetDialog.onBackPressed();
+
         }
     }
 
     class Bridge {
+
+        @JavascriptInterface
+        public void popupCancel() {
+            // 버튼 클릭 시 실행할 작업을 처리하는 메소드
+            // 이 부분에서 원하는 동작을 수행하면 됩니다.
+            //super.dismiss();
+            bottomSheetDialog.onBackPressed();
+        }
+
+        @JavascriptInterface
+        public void popupClick() {
+            // 버튼 클릭 시 실행할 작업을 처리하는 메소드
+            // 이 부분에서 원하는 동작을 수행하면 됩니다.
+            finish();
+        }
+
         @JavascriptInterface
         public void showInterstitial() {
             new Handler(getMainLooper()).post(new Runnable() {
@@ -914,6 +993,7 @@ public class MainActivity extends AppCompatActivity {
 
     boolean isCapture;
 
+
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -1135,4 +1215,6 @@ public class MainActivity extends AppCompatActivity {
         public static final String INTENT_PROTOCOL_END = ";end;";
         public static final String GOOGLE_PLAY_STORE_PREFIX = "market://details?id=";
     }
+
+
 }
