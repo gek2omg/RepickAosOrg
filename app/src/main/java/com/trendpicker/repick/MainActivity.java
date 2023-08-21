@@ -74,6 +74,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 
+import com.buzzvil.booster.external.BuzzBooster;
+import com.buzzvil.booster.external.BuzzBoosterConfig;
+import com.buzzvil.booster.external.BuzzBoosterJavaScriptInterface;
 import com.buzzvil.buzzad.benefit.BuzzAdBenefit;
 import com.buzzvil.buzzad.benefit.BuzzAdBenefitConfig;
 import com.buzzvil.buzzad.benefit.core.ad.AdError;
@@ -198,6 +201,10 @@ public class MainActivity extends AppCompatActivity {
         final BuzzAdBenefitConfig buzzAdBenefitConfig = new BuzzAdBenefitConfig.Builder(getApplicationContext())
                 .setDefaultFeedConfig(feedConfig)
                 .build();
+
+        // 버스부스터
+        final BuzzBoosterConfig buzzBoosterConfig = new BuzzBoosterConfig("136614165053620");
+        BuzzBooster.init(this, buzzBoosterConfig);
 
         BuzzAdBenefit.init(getApplicationContext(), buzzAdBenefitConfig);
         BuzzAdBenefit.init(this, buzzAdBenefitConfig);
@@ -324,6 +331,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         webView.addJavascriptInterface(new Bridge(), Props.bridge_name);
+        webView.addJavascriptInterface( new BuzzBoosterJavaScriptInterface(this),"buzzBoosterJS");
 
         if (!USER_AGENT.isEmpty()) {
             String userAgent = webView.getSettings().getUserAgentString();
@@ -435,6 +443,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         webView=null;
+        webView.removeJavascriptInterface("buzzBoosterJS");
     }
 
     private ValueCallback mFilePathCallback;
@@ -538,6 +547,7 @@ public class MainActivity extends AppCompatActivity {
             // WebView 객체가 null이 아닌 경우에만 작업 수행
 
             webView.addJavascriptInterface(new Bridge(), Props.bridge_name);
+
 
             webView.getSettings().setDomStorageEnabled(true);
             webView.getSettings().setJavaScriptCanOpenWindowsAutomatically(true);
