@@ -1,4 +1,15 @@
 <resources>
     <string name="app_name">리픽</string>
     <string name="confirm">확인</string>
+
+    <!-- form google admob -->
+    <!-- APP ID : ca-app-pub-5439348811959475~9885196202 -->
+    <!-- 전면광고 ID : ca-app-pub-5439348811959475/7208742265 -->
+    <!-- 리워드광고 ID : ca-app-pub-5439348811959475/8907603211 -->
+    <!-- Test ID-->
+    <!-- ca-app-pub-3940256099942544~3347511713 -->
+    <!-- ca-app-pub-3940256099942544/8691691433 -->
+    <string name="app_add_id">ca-app-pub-5439348811959475~9885196202</string>
+    <string name="interstitial_add_unit">ca-app-pub-5439348811959475/8907603211</string>
+
 </resources>

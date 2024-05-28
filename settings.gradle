@@ -13,6 +13,9 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
         maven { url "https://dl.buzzvil.com/public/maven" } // 버즈빌 저장소
+
+        // (for tnkad)경로를 추가해 주시기 바랍니다.
+        maven { url "https://repository.tnkad.net:8443/repository/public/" }
     }
 }
 ext {

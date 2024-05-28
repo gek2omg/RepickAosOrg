@@ -7,14 +7,21 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" />
+
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+
     <!-- 5.0 버전 파일업로드 퍼미션 -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <!-- 외부 저장소 사용 -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
+        android:hardwareAccelerated="true"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -27,8 +34,19 @@
         android:preserveLegacyExternalStorage="true"
         android:configChanges="keyboardHidden|orientation|screenSize"
         android:requestLegacyExternalStorage="true">
+
+        <!-- AdMob 보상 전면 광고 -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="@string/app_add_id" />
+
+        <!-- AdMob 보상 전면 광고 -->
+<!--        <meta-data-->
+<!--            android:name="com.google.android.gms.ads.APPLICATION_ID"-->
+<!--            android:value="@string/app_add_id" />-->
+
         <service android:name=".MyFirebaseMessagingService"
-            android:exported="true">
+            android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT"/>
             </intent-filter>
@@ -38,12 +56,20 @@
             android:screenOrientation="portrait"
             android:exported="false">
         </activity>
+
         <activity
-                android:name=".BackPopupActivity"
-                android:theme="@android:style/Theme.Dialog"
-                android:screenOrientation="portrait"
-                android:exported="true">
-        </activity>
+            android:name=".QRScanActivity"
+            android:configChanges="orientation|screenSize"
+            android:screenOrientation="portrait"
+            android:exported="false" />
+
+
+        <!--        <activity-->
+<!--                android:name=".BackPopupActivity"-->
+<!--                android:theme="@android:style/Theme.Dialog"-->
+<!--                android:screenOrientation="portrait"-->
+<!--                android:exported="true">-->
+<!--        </activity>-->
         <activity android:name=".SplashActivity"
             android:configChanges="orientation|screenSize"
             android:screenOrientation="portrait"
@@ -68,7 +94,19 @@
         <meta-data
                 android:name="com.buzzvil.APP_KEY"
                 android:value="app-pub-468237261771847"/>
+
+
+        <!-- 시작: for tnkad -->
+        <activity
+            android:name="com.tnkfactory.ad.AdWallActivity"
+            android:exported="true"
+            android:screenOrientation="portrait" />
+
+        <!-- Tnk 사이트에서 앱 등록하면 상단에 App ID 가 나타납니다. -->
+        <meta-data
+            android:name="tnkad_app_id"
+            android:value="90b04000-f051-085f-f580-150b020a010d" />
+        <!-- 끝: for tnkad -->
+
     </application>
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 </manifest>

@@ -1,5 +1,5 @@
 package com.trendpicker.repick;
-
+// 222
 import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
 import static android.content.ContentValues.TAG;
 import static android.content.pm.PackageManager.PERMISSION_DENIED;
@@ -33,6 +33,7 @@ import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.media.AudioAttributes;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -71,6 +72,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.browser.customtabs.CustomTabsIntent;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 
@@ -85,32 +87,62 @@ import com.buzzvil.buzzad.benefit.presentation.feed.BuzzAdFeed;
 import com.buzzvil.buzzad.benefit.presentation.feed.FeedConfig;
 import com.buzzvil.buzzad.benefit.presentation.interstitial.BuzzAdInterstitial;
 import com.buzzvil.buzzad.benefit.presentation.interstitial.InterstitialAdListener;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.FullScreenContentCallback;
+import com.google.android.gms.ads.LoadAdError;
+import com.google.android.gms.ads.MobileAds;
+import com.google.android.gms.ads.OnUserEarnedRewardListener;
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
+import com.google.android.gms.ads.initialization.InitializationStatus;
+import com.google.android.gms.ads.initialization.OnInitializationCompleteListener;
+import com.google.android.gms.ads.interstitial.InterstitialAd;
+import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback;
+import com.google.android.gms.ads.rewarded.RewardItem;
+import com.google.android.gms.ads.rewarded.RewardedAd;
+import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.gun0912.tedpermission.PermissionListener;
 import com.gun0912.tedpermission.normal.TedPermission;
+import com.tnkfactory.ad.TNK_POINT_EFFECT_TYPE;
+import com.tnkfactory.ad.TnkAdConfig;
+import com.tnkfactory.ad.TnkOfferwall;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class MainActivity extends AppCompatActivity {
+
+//    // for google admob(일반 전면)
+//    private InterstitialAd mInterstitialAd;
+
+    // for google admob(rewarded 전면)
+    private RewardedAd mRewardedAd;
+
+    // for tnkad
+    private TnkOfferwall offerwall;
+    private String m_user_id;
+
+
     BackPressCloseHandler backPressCloseHandler;
     public ValueCallback<Uri> filePathCallbackNormal;
     public ValueCallback<Uri[]> filePathCallbackLollipop;
     public final static int FILECHOOSER_NORMAL_REQ_CODE = 2001;
     public final static int FILECHOOSER_LOLLIPOP_REQ_CODE = 2002;
+    public final static int QRSCANNER_REQ_CODE = 1093;
 
     BottomSheetDialog bottomSheetDialog;
     private boolean isNews = false;
+
     String[] exceptUrl = new String[]{
             "https://trendpicker1.cafe24.com/numpick/cash.php",
             "https://trendpicker1.cafe24.com/shop/buy-ok.php",
@@ -127,15 +159,70 @@ public class MainActivity extends AppCompatActivity {
             "https://trendpicker1.cafe24.com/numpick/ad.php",
             "https://trendpicker1.cafe24.com/numpick/scan.php",
             "https://trendpicker1.cafe24.com/mypage/mypage.php",
-           // "https://trendpicker1.cafe24.com/mypage/backpopup.php",
             "https://trendpicker1.cafe24.com/mypage/order-list.php",
             "https://trendpicker1.cafe24.com/numpick/scan-ok.php"};
+
 
     private Uri cameraImageUri = null;
     public final String baseUrl = base_url;
     public WebView webView;
     MAPP mapp;
     DownloadOBJ downloadOBJ = null;
+
+
+    //------------------------------------------------------------------//
+    private void checkCameraPermission(PermissionListener permissionListener, String okMsg, String rejectMsg) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            TedPermission.create()
+                    .setGotoSettingButton(true)
+                    .setPermissionListener(permissionListener)
+                    .setRationaleMessage(okMsg)
+                    .setDeniedMessage(rejectMsg)
+                    .setPermissions(// Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                            Manifest.permission.CAMERA,
+                            Manifest.permission.READ_MEDIA_IMAGES,
+                            Manifest.permission.READ_MEDIA_VIDEO,
+                            Manifest.permission.READ_MEDIA_AUDIO)
+                    .check();
+        } else {
+
+            TedPermission.create()
+                    .setGotoSettingButton(true)
+                    .setPermissionListener(permissionListener)
+                    .setRationaleMessage(okMsg)
+                    .setDeniedMessage(rejectMsg)
+                    .setPermissions(Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                            Manifest.permission.CAMERA,
+                            Manifest.permission.READ_EXTERNAL_STORAGE)
+                    .check();
+        }
+
+    }
+    //------------------------------------------------------------------//
+    private void openCustomTab(String url) {
+        CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder();
+
+        // 상단 바의 색상을 설정합니다.
+        builder.setToolbarColor(ContextCompat.getColor(this, R.color.white));
+
+        // 로고 설정
+//        Bitmap closeButtonIcon = BitmapFactory.decodeResource(getResources(), R.drawable.sp_logo);
+//        builder.setCloseButtonIcon(closeButtonIcon);
+
+        // 애니메이션 설정
+        builder.setStartAnimations(this, android.R.anim.fade_in, android.R.anim.fade_out);
+        builder.setExitAnimations(this, android.R.anim.slide_in_left, android.R.anim.slide_out_right);
+
+        CustomTabsIntent customTabsIntent = builder.build();
+        customTabsIntent.launchUrl(this, Uri.parse(url));
+    }
+
+    public void processQRCode(String code) {
+        // String data = "http://m.dhlottery.co.kr/?v=1111q050911314044q062730313944q012835384044q061422313443q0105181940411221084601";
+        webView.evaluateJavascript("javascript:getQrScan('" + code + "')",null);
+
+        Toast.makeText(this , "QR Code 스캔 완료!", Toast.LENGTH_LONG).show();
+    }
 
     static class DownloadOBJ {
         String url;
@@ -211,16 +298,20 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         buzzAdInterstitial = new BuzzAdInterstitial.Builder("499428234083850").buildBottomSheet();
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            String channelId = "001";
-            NotificationManager notificationManager =
-                    (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            String channelName_marketing = "REPICK 알림";
-            NotificationChannel channel_marketing = null;
-            channel_marketing = new NotificationChannel(channelId, channelName_marketing, NotificationManager.IMPORTANCE_HIGH);
-            notificationManager.createNotificationChannel(channel_marketing);
-        }
+
+        // 구글 adMob 초기화
+        MobileAds.initialize(MainActivity.this, new OnInitializationCompleteListener() {
+            @Override
+            public void onInitializationComplete(@NonNull InitializationStatus initializationStatus) {
+                loadGoogleRewardedAd();
+            }
+        });
+
+
+        setupFcmNotificationChannel();
+
         askNotificationPermission();
+
         FirebaseMessaging.getInstance().getToken()
                 .addOnCompleteListener(task -> {
                     if (!task.isSuccessful()) {
@@ -262,6 +353,8 @@ public class MainActivity extends AppCompatActivity {
         webView.getSettings().setDisplayZoomControls(false);
         webView.getSettings().setTextZoom(100);
         webView.setWebContentsDebuggingEnabled(true);
+
+        webView.getSettings().setUserAgentString("Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5 Build/MMB29K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.96 Mobile Safari/537.36");
 
         webView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
         webView.getSettings().setAllowContentAccess(true);
@@ -320,13 +413,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 };
 
-                TedPermission.create()
-                        .setGotoSettingButton(true)
-                        .setPermissionListener(permissionListener)
-                        .setRationaleMessage("사진 및 파일을 저장하기 위하여 접근 권한이 필요합니다.")
-                        .setDeniedMessage("[설정] > [권한] 에서 권한을 허용할 수 있습니다.")
-                        .setPermissions(Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.CAMERA, Manifest.permission.READ_EXTERNAL_STORAGE)
-                        .check();
+                checkCameraPermission(permissionListener, "사진 및 파일을 저장하기 위하여 접근 권한이 필요합니다.", "[설정] > [권한] 에서 권한을 허용할 수 있습니다.");
             }
         });
 
@@ -345,6 +432,211 @@ public class MainActivity extends AppCompatActivity {
         }
 
     }
+
+
+    private void setupFcmNotificationChannel() {
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+
+            //--- setup start for push sound -------------------------//
+            Uri soundUri = Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.fcm);
+            AudioAttributes soundAttributes = new AudioAttributes.Builder()
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)  // USAGE_NOTIFICATION   USAGE_NOTIFICATION_RINGTONE USAGE_ALARM
+                    .build();
+            //--- setup end   for push sound -------------------------//
+
+
+            final String channelId = "001";
+            NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            String channelName_marketing = "REPICK 알림";
+            NotificationChannel channel_marketing = new NotificationChannel(channelId, channelName_marketing, NotificationManager.IMPORTANCE_HIGH);
+
+            //--- setup start for push sound -------------------------//
+            channel_marketing.setSound(soundUri, soundAttributes);
+            //--- setup end   for push sound -------------------------//
+
+            notificationManager.createNotificationChannel(channel_marketing);
+        }
+    }
+
+    // 구글 adMob 초기화
+
+    private void loadGoogleRewardedAd() {
+        AdRequest adRequest = new AdRequest.Builder().build();
+
+        RewardedAd.load(this, getString(R.string.interstitial_add_unit),
+                adRequest, new RewardedAdLoadCallback() {
+                    @Override
+                    public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
+                        super.onAdFailedToLoad(loadAdError);
+                        // Handle the error.
+                        mRewardedAd = null;
+                        Toast.makeText(MainActivity.this, "Ad Load Fail!", Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void onAdLoaded(@NonNull RewardedAd ad) {
+                        super.onAdLoaded(ad);
+                        mRewardedAd = ad;
+
+                        mRewardedAd.setFullScreenContentCallback(new FullScreenContentCallback() {
+                            @Override
+                            public void onAdClicked() {
+                                // Called when a click is recorded for an ad.
+                                Log.d("RewardedAd", "Ad was clicked.");
+                            }
+
+                            @Override
+                            public void onAdDismissedFullScreenContent() {
+                                // Called when ad is dismissed.
+                                // Set the ad reference to null so you don't show the ad a second time.
+                                Log.d("RewardedAd", "Ad dismissed fullscreen content.");
+                                mRewardedAd = null;
+                                loadGoogleRewardedAd();
+                            }
+
+                            @Override
+                            public void onAdFailedToShowFullScreenContent(com.google.android.gms.ads.AdError adError) {
+                                // Called when ad fails to show.
+                                Log.e("RewardedAd", "Ad failed to show fullscreen content.");
+                                mRewardedAd = null;
+                            }
+
+                            @Override
+                            public void onAdImpression() {
+                                // Called when an impression is recorded for an ad.
+                                Log.d("RewardedAd", "Ad recorded an impression.");
+                            }
+
+                            @Override
+                            public void onAdShowedFullScreenContent() {
+                                // Called when ad is shown.
+                                Log.d("RewardedAd", "Ad showed fullscreen content.");
+                            }
+                        });
+                        // Toast.makeText(MainActivity.this, "Ad Load OK!", Toast.LENGTH_SHORT).show();
+                    }
+                });
+
+    }
+
+//    @Override
+//    protected void onResume() {
+//        super.onResume();
+//
+//        mInterstitialAd = null;
+//
+//        MobileAds.initialize(this, new OnInitializationCompleteListener() {
+//            @Override
+//            public void onInitializationComplete(InitializationStatus initializationStatus) {
+//                loadInterstitialAd();
+//            }
+//        });
+//    }
+
+    // 시작하기: QR Code Scan
+    public void startNativeQrScan() {
+//        Toast.makeText(MainActivity.this, "Start QR Code Scan!", Toast.LENGTH_SHORT).show();
+//        Intent intent = new Intent(this, QRScanActivity.class);
+//        startActivityForResult(intent, QRSCANNER_REQ_CODE);
+
+
+
+        PermissionListener permissionListener = new PermissionListener() {
+            @Override
+            public void onPermissionGranted() {
+                // 권한 요청 성공
+                // Toast.makeText(MainActivity.this, "Start QR Code Scan!", Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(MainActivity.this, QRScanActivity.class);
+                startActivityForResult(intent, QRSCANNER_REQ_CODE);
+            }
+
+            @Override
+            public void onPermissionDenied(List<String> deniedPermissions) {
+                // 권한 요청 실패
+            }
+        };
+
+        checkCameraPermission(permissionListener, "사진 및 동영상 녹화를 위하여 접근 권한이 필요합니다.", "[설정] > [권한] 에서 권한을 허용할 수 있습니다.");
+    }
+
+
+//    public void startAdMob() {
+//        if (mInterstitialAd != null) {
+//            mInterstitialAd.show(MainActivity.this);
+//        } else {
+//            Toast.makeText(MainActivity.this, "초기화 중, 잠시 후 다시 시도해 주세요!", Toast.LENGTH_LONG).show();
+//        }
+//    }
+
+    // tnkAdMob
+    // javascript -> TNKAD 시작 처리
+    private void startTnkAd(String user_id) {
+
+        if (m_user_id != null && offerwall != null) {
+            if (m_user_id.equals(user_id)) {
+                // Toast.makeText(MainActivity.this, "2 번째 실행", Toast.LENGTH_SHORT).show();
+                offerwall.startOfferwallActivity(MainActivity.this);
+                return;
+            }
+        }
+
+        m_user_id = user_id;
+        offerwall = new TnkOfferwall(this);
+
+        Runnable rn = () -> {
+            // 고유 아이디는 매체사에서 유저 식별을 위한 고유값을 사용하셔야 하며
+            // 이 예제에서는 google adid를 사용 합니다.
+            // backgroud thread 처리 필요
+            //---AdvertisingIdInfo adInfo = AdvertisingIdInfo.requestIdInfo(MainActivity.this);
+            //---String id = adInfo.getId();
+
+            // 2) 유저 식별값 설정
+            //-----offerwall.setUserName(id);
+            offerwall.setUserName(user_id);
+            // 3) COPPA 설정 (https://www.ftc.gov/business-guidance/privacy-security/childrens-privacy)
+            offerwall.setCOPPA(false);
+            // 4) 포인트 금액 앞에 아이콘, 뒤에 재화 단위 출력 여부를 설정합니다.
+            TnkAdConfig.INSTANCE.setPointEffectType(TNK_POINT_EFFECT_TYPE.UNIT);
+
+            offerwall.getEarnPoint(point -> {
+                runOnUiThread(() -> {
+                    // Toast.makeText(MainActivity.this, String.format("받을 수 있는 포인트 : %d p", point), Toast.LENGTH_SHORT).show();
+                    offerwall.startOfferwallActivity(MainActivity.this);
+                });
+                return null;
+            });
+        };
+        new Thread(rn).start();
+
+    }
+
+    public void startAdMob() {
+
+        if (mRewardedAd == null) {
+            Toast.makeText(MainActivity.this, "초기화 중, 잠시 후 다시 시도해 주세요!", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        if (mRewardedAd != null) {
+            runOnUiThread(() -> {
+                        Activity activityContext = MainActivity.this;
+                        mRewardedAd.show(activityContext, new OnUserEarnedRewardListener() {
+                            @Override
+                            public void onUserEarnedReward(@NonNull RewardItem rewardItem) {
+                                // Handle the reward.
+                                // Log.d("RewardedAd", "The user earned the reward.");
+                                // int rewardAmount = rewardItem.getAmount();
+                                // String rewardType = rewardItem.getType();
+                                webView.evaluateJavascript("javascript:isAdComplete()", null);
+                            }
+                        });
+                    }
+            );
+        }
+    }
+
     // Declare the launcher at the top of your Activity/Fragment:
     private final ActivityResultLauncher<String> requestPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
@@ -441,9 +733,9 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
-        webView=null;
         webView.removeJavascriptInterface("buzzBoosterJS");
+        webView=null;
+        super.onDestroy();
     }
 
     private ValueCallback mFilePathCallback;
@@ -529,11 +821,11 @@ public class MainActivity extends AppCompatActivity {
 //            Intent intent = new Intent(this, BackPopupActivity.class);
 //            intent.putExtra("data", "Test Popup");
 //            startActivityForResult(intent, 1);
-           // setContentView(R.layout.activity_backpopup);
+            // setContentView(R.layout.activity_backpopup);
             final View view = getLayoutInflater().inflate(R.layout.activity_backpopup, null);
 
             bottomSheetDialog = new BottomSheetDialog(this);
-           // bottomSheetDialog = new BottomSheetDialog(this);
+            // bottomSheetDialog = new BottomSheetDialog(this);
             bottomSheetDialog.setContentView(view);
             // WebView 생성채
             WebView webView = new WebView(this);
@@ -575,8 +867,9 @@ public class MainActivity extends AppCompatActivity {
             // WebView 설정
             webView.setWebViewClient(new WebViewClient());
             webView.getSettings().setJavaScriptEnabled(true);
+            //---webView.loadUrl("https://trendpicker1.cafe24.com/mypage/backpopup.php"); // 원하는 URL로 변경
             webView.loadUrl("https://trendpicker1.cafe24.com/mypage/backpopup.php"); // 원하는 URL로 변경
-           // bottomSheetDialog.setCancelable(false);   다른곳눌렀을때 취소
+            // bottomSheetDialog.setCancelable(false);   다른곳눌렀을때 취소
             bottomSheetDialog.setContentView(webView);
 
             ViewGroup.LayoutParams layoutParams = webView.getLayoutParams();
@@ -592,6 +885,23 @@ public class MainActivity extends AppCompatActivity {
     }
 
     class Bridge {
+
+        // tnkad 시작하기
+        @JavascriptInterface
+        public void tnkAdMob(String user_id) {
+            startTnkAd(user_id);
+        }
+
+        // 구글 애드몹 시작하기
+        @JavascriptInterface
+        public void playAdMob() {
+            startAdMob();
+        }
+
+        @JavascriptInterface
+        public void startQrScan() {
+            startNativeQrScan();
+        }
 
         @JavascriptInterface
         public void popupCancel() {
@@ -718,13 +1028,15 @@ public class MainActivity extends AppCompatActivity {
             }
         };
 
-        TedPermission.create()
-                .setGotoSettingButton(true)
-                .setPermissionListener(permissionListener)
-                .setRationaleMessage("사진 및 파일을 업로드하기 위하여 접근 권한이 필요합니다.")
-                .setDeniedMessage("[설정] > [권한] 에서 권한을 허용할 수 있습니다.")
-                .setPermissions(Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.CAMERA, Manifest.permission.READ_EXTERNAL_STORAGE)
-                .check();
+        checkCameraPermission(permissionListener, "사진 및 파일을 업로드하기 위하여 접근 권한이 필요합니다.", "[설정] > [권한] 에서 권한을 허용할 수 있습니다.");
+
+//        TedPermission.create()
+//                .setGotoSettingButton(true)
+//                .setPermissionListener(permissionListener)
+//                .setRationaleMessage("사진 및 파일을 업로드하기 위하여 접근 권한이 필요합니다.")
+//                .setDeniedMessage("[설정] > [권한] 에서 권한을 허용할 수 있습니다.")
+//                .setPermissions(Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.CAMERA, Manifest.permission.READ_EXTERNAL_STORAGE)
+//                .check();
     }
 
     // 카메라 기능 구현
@@ -763,13 +1075,21 @@ public class MainActivity extends AppCompatActivity {
         super.onConfigurationChanged(newConfig);
     }
 
-    //액티비티가 종료될 때 결과를 받고 파일을 전송할 때 사용
+    // 액티비티가 종료될 때 결과를 받고 파일을 전송할 때 사용
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
         switch (requestCode) {
+            case QRSCANNER_REQ_CODE:
+                if (resultCode == Activity.RESULT_OK) {
+                    String scannedCode = data.getStringExtra("scannedCode");
+                    processQRCode(scannedCode);
+                } else if (resultCode == Activity.RESULT_CANCELED) {
+                    // Toast.makeText(this,"스캔을 취소하였습니다.", Toast.LENGTH_SHORT).show();
+                }
+                break;
             case FILECHOOSER_NORMAL_REQ_CODE:
                 if (resultCode == RESULT_OK) {
                     if (filePathCallbackNormal == null) return;
@@ -833,7 +1153,6 @@ public class MainActivity extends AppCompatActivity {
                         public void onPermissionGranted() {
                             // 권한 요청 성공
                             request.grant(request.getResources());
-
                         }
 
                         @Override
@@ -843,13 +1162,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                     };
 
-                    TedPermission.create()
-                            .setGotoSettingButton(true)
-                            .setPermissionListener(permissionListener)
-                            .setRationaleMessage("사진 및 파일을 업로드하기 위하여 접근 권한이 필요합니다.")
-                            .setDeniedMessage("[설정] > [권한] 에서 권한을 허용할 수 있습니다.")
-                            .setPermissions(Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.CAMERA, Manifest.permission.READ_EXTERNAL_STORAGE)
-                            .check();
+                    checkCameraPermission(permissionListener, "사진 및 파일을 업로드하기 위하여 접근 권한이 필요합니다.", "[설정] > [권한] 에서 권한을 허용할 수 있습니다.");
                 }
             });
         }
@@ -910,9 +1223,9 @@ public class MainActivity extends AppCompatActivity {
                             result.confirm();
                             dialog.dismiss();
                         }).setNegativeButton("취소", (dialogInterface, i) -> {
-                    result.cancel();
-                    dialogInterface.dismiss();
-                })
+                            result.cancel();
+                            dialogInterface.dismiss();
+                        })
                         .setCancelable(false)
                         .create().show();
                 return true;
@@ -1033,11 +1346,11 @@ public class MainActivity extends AppCompatActivity {
                                 dialog.dismiss();
                                 finish();
                             }).setNegativeButton("권한 설정", (dialog, which) -> {
-                        dialog.dismiss();
-                        Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                                .setData(Uri.parse("package:" + getApplicationContext().getPackageName()));
-                        startActivity(intent);
-                    }).setCancelable(false).show();
+                                dialog.dismiss();
+                                Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                                        .setData(Uri.parse("package:" + getApplicationContext().getPackageName()));
+                                startActivity(intent);
+                            }).setCancelable(false).show();
 //                    return;
                 } else {
                     runCamera();
@@ -1056,6 +1369,13 @@ public class MainActivity extends AppCompatActivity {
             } catch (Exception e) {
                 return false;
             }
+
+            // 구글 로그인 URL 감지
+//            if (url.startsWith("https://accounts.google.com/")) {
+//                openCustomTab(url);
+//                return true;
+//            }
+
             if (!URLUtil.isNetworkUrl(url) && !URLUtil.isJavaScriptUrl(url)) {
 
                 if (uri.getScheme().equalsIgnoreCase("http://") || uri.getScheme().equalsIgnoreCase("https://")){
@@ -1078,6 +1398,10 @@ public class MainActivity extends AppCompatActivity {
                     || uri.getHost().contains("kakao")
                     || uri.getHost().contains("daum")
                     || uri.getHost().contains("naver")
+                    || uri.getHost().contains("google")
+                    || uri.getHost().contains("googleapis")
+                    || uri.getHost().contains("youtube")
+                    || uri.getHost().contains("gmail")
                     || uri.getHost().contains("ex-")
                     || uri.getHost().contains("taptalk")
                     || uri.getHost().contains("postcode")
@@ -1094,7 +1418,7 @@ public class MainActivity extends AppCompatActivity {
 
             }else {
                 if (url.startsWith("https://trendpicker1.cafe24.com/numpick/news")
-                    || url.startsWith("http://trendpicker1.cafe24.com/numpick/news")){
+                        || url.startsWith("http://trendpicker1.cafe24.com/numpick/news")){
                     isNews = true;
                 }else{
                     isNews = false;
@@ -1117,6 +1441,16 @@ public class MainActivity extends AppCompatActivity {
                 return false;
             }
 
+            // pincrux 폼전송시 외부 브라우저로 전송, 웹뷰는 현재 페이지로 전송
+            if (url.contains("pincrux.shop")) {
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                startActivity(intent);
+
+                webView.loadUrl("https://trendpicker1.cafe24.com/numpick/receive-api.php");
+
+                return true;
+            }
+
             if (!URLUtil.isNetworkUrl(url) && !URLUtil.isJavaScriptUrl(url)) {
 
                 if (uri.getScheme().equalsIgnoreCase("http://") || uri.getScheme().equalsIgnoreCase("https://")){
@@ -1143,6 +1477,10 @@ public class MainActivity extends AppCompatActivity {
                     || uri.getHost().contains("kakao")
                     || uri.getHost().contains("daum")
                     || uri.getHost().contains("naver")
+                    || uri.getHost().contains("google")
+                    || uri.getHost().contains("googleapis")
+                    || uri.getHost().contains("youtube")
+                    || uri.getHost().contains("gmail")
                     || uri.getHost().contains("ex-")
                     || uri.getHost().contains("taptalk")
                     || uri.getHost().contains("postcode")
